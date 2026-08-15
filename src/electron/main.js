@@ -224,7 +224,7 @@ const {
   popoverBounds,
   reconcileCodexAccountSelection,
   runTrayMenuAction,
-  settleSystemDarkUi,
+  watchSystemDarkUi,
   sortCodexAccountsForDisplay,
   shouldUseTemplateTrayIcon,
   trayShowsTitle
@@ -4329,7 +4329,7 @@ function pushSystemUiThemeToRenderer(dark) {
   try { mainWindow.webContents.send('theme:systemUi', { dark: value }); } catch (_) {}
 }
 
-// Windows cannot answer this at event time — see settleSystemDarkUi in tray.js
+// Windows cannot answer this at event time — see watchSystemDarkUi in tray.js
 // for what was measured. Everywhere else the event already carries the truth.
 let systemUiThemeRevision = 0;
 
@@ -4339,13 +4339,13 @@ async function pushSystemUiThemeAfterChange() {
     return;
   }
   const revision = ++systemUiThemeRevision;
-  const settled = await settleSystemDarkUi({
+  await watchSystemDarkUi({
     read: readWindowsSystemDarkUi,
     wait: (ms) => new Promise((resolve) => { setTimeout(resolve, ms); }),
     isCurrent: () => revision === systemUiThemeRevision,
-    previous: currentSystemDarkTrayUi()
+    held: currentSystemDarkTrayUi(),
+    publish: (dark) => pushSystemUiThemeToRenderer(dark)
   });
-  if (typeof settled === 'boolean') pushSystemUiThemeToRenderer(settled);
 }
 
 function pushSettingsToRenderer() {
